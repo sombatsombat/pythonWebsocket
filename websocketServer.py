@@ -58,25 +58,48 @@ class MyServerProtocol(WebSocketServerProtocol):
 
     def processMessage (self, payload, isBinary ):
         
-        if ( payload == "Sombat") :
-            self.sendMessage("Hello " + payload, isBinary)
-        else:
-            self.sendMessage("You are not Sombat",isBinary)
-        aSql = """
-            select "remoteName" as remotename, "buttonData"->'button'->>'volup' as avolup,"buttonData" 
-            from "infraredRF_data"
-            where "remoteName" = """
-            
+        #if ( payload == "Sombat") :
+        #    self.sendMessage("Hello " + payload, isBinary)
+        #else:
+        #    self.sendMessage("You are not Sombat",isBinary)
+        aSql ="""select "remoteName", "remoteData" from "infraredRF_data"
+                where "remoteName" = """
         aSql = aSql + "'" + payload + "'"
+        
+        #print aSql
+        
+        #"""
+        #    select "remoteName" as remotename, "buttonData"->'button'->>'volup' as avolup,"buttonData" 
+        #    from "infraredRF_data"
+        #    where "remoteName" = """
+            
+        #aSql = aSql + "'" + payload + "'"
 
         print aSql
         cur.execute(aSql)
     
-        for row in cur.fetchall():
-             print row['remotename'],row['buttonData'],row['avolup'],type(row['avolup'])
-             aList = ast.literal_eval(row['avolup'])
-             for element in aList:
-                 print element 
+        aRow = cur.fetchone()
+        #print aRow
+        #print type(aRow)
+        if (aRow):
+            #print aRow
+            #print aRow["remoteName"],aRow["remoteData"]
+            aString = '{ "status" : "found" , ' + " \"remote_name\" : \""  + aRow["remoteName"] + "\" ," \
+                    + " \"remote_data\" : " + aRow["remoteData"] + " }"
+            print (aString)
+            #print type (str(aRow))
+            self.sendMessage(aString,False)
+        else:
+            self.sendMessage('{ "status" : "not found" } ')
+        #for row in cur.fetchall():
+        #     print row['remotename'],row['buttonData']
+        #     aList = ast.literal_eval(row['avolup'])
+             
+        #     aRemoteDataObjList = ast.literal_eval(row['remoteData'])
+        #     for buttonObj in aRemoteDataObjList:
+        #         print buttonObj['button_name']             
+        #     for element in aList:
+        #         print element 
 
     
 
@@ -88,14 +111,17 @@ if __name__ == '__main__':
     from twisted.internet import reactor
 
     #conn = psycopg2.connect("dbname=uniart4_pr host=localhost user=user password=password")
+    print "Opening conn"
     conn = psycopg2.connect("dbname=infraredRF host=odoofree.c9ds6ld0qjal.ap-southeast-1.rds.amazonaws.com user=iruser password=sunshine" )
     #conn = psycopg2.connect('dbname=infraredRF')
     #cur = conn.cursor()
+    print "Openning cur"
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     #cur.execute("""
     #select "remoteName", "buttonData"->'button'->>'volup' as avolup,"buttonData" from "infraredRF_data"
     #""")
 
+    print "Execute sql"
     cur.execute("""
     select "remoteName", "remoteData" from "infraredRF_data"
     """)
@@ -106,7 +132,7 @@ if __name__ == '__main__':
         for buttonObj in aRemoteDataObjList:
             print buttonObj['button_name']
         #print row['remoteName'],row['remoteData'],type(row['remoteData'])
-
+        
 
     log.startLogging(sys.stdout)
 
