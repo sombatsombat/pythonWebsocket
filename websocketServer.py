@@ -56,12 +56,53 @@ class MyServerProtocol(WebSocketServerProtocol):
     def onClose(self, wasClean, code, reason):
         print("WebSocket connection closed: {0}".format(reason))
 
+    def get_ir_data (self, aJsonRequest ):
+        aSql ="""select "remoteName", "remoteData" from "infraredRF_data"
+                where "remoteName" = """
+        aSql = aSql + "'" + aJsonRequest["name"] + "'"
+        
+        #print "the sql = " ,aSql
+        #return json.loads('{ "status" : "found" } ')
+        cur.execute(aSql)
+        aRow = cur.fetchone()
+        #print aRow
+        #print type(aRow)
+        if (aRow):
+            #print "Got the row"
+            aJsonResult = {}
+            aJsonResult['status'] ='found'
+            aJsonResult['remote_data'] = aRow["remoteData"]
+            return aJsonResult
+        else:
+            #print "Not found remote"
+            return json.loads('{ "status" : "Not found" } ')
+
     def processMessage (self, payload, isBinary ):
+        
+        switcher = {
+            "get_ir" : self.get_ir_data
+        }
         
         #if ( payload == "Sombat") :
         #    self.sendMessage("Hello " + payload, isBinary)
         #else:
         #    self.sendMessage("You are not Sombat",isBinary)
+        #print payload
+        aJsonRequest = json.loads(payload)
+        
+        aFunctionToCall = switcher.get( aJsonRequest["command"], None )
+        if ( aFunctionToCall ):
+            aJsonResult = aFunctionToCall ( aJsonRequest )
+            self.sendMessage(json.dumps(aJsonResult))
+        else:
+            self.sendMessage('{ "status" : "not found function name" } ')
+        return            
+        
+        #print "The command is " ,aJsonRequest["command"], ", parameter1 is ", aJsonRequest["name"]
+        #for key in aJsonRequest:
+        #    value = aJsonRequest[key]
+        #    print("The key and value are ({}) = ({})".format(key, value))
+        #return
         aSql ="""select "remoteName", "remoteData" from "infraredRF_data"
                 where "remoteName" = """
         aSql = aSql + "'" + payload + "'"
@@ -85,7 +126,7 @@ class MyServerProtocol(WebSocketServerProtocol):
             #print aRow
             #print aRow["remoteName"],aRow["remoteData"]
             aString = '{ "status" : "found" , ' + " \"remote_name\" : \""  + aRow["remoteName"] + "\" ," \
-                    + " \"remote_data\" : " + aRow["remoteData"] + " }"
+                    + " \"remote_data\" : " + json.dumps(aRow["remoteData"]) + " }"
             print (aString)
             #print type (str(aRow))
             self.sendMessage(aString,False)
@@ -124,15 +165,20 @@ if __name__ == '__main__':
     print "Execute sql"
     cur.execute("""
     select "remoteName", "remoteData" from "infraredRF_data"
+    where "remoteName" = 'Sony0001'
     """)
+    
 
     for row in cur.fetchall():
         print row['remoteName']
-        aRemoteDataObjList = ast.literal_eval(row['remoteData'])
-        for buttonObj in aRemoteDataObjList:
-            print buttonObj['button_name']
+        #print row['remoteData']
+        #print type(row['remoteData'])
+        #aRemoteDataObjList = ast.literal_eval(row['remoteData'])
+        #aJson = json.loads(row['remoteData'])
+        #print aJson
+        for buttonObj in row['remoteData']:
+            print "button : ",buttonObj['button_name'], " X_pos = " ,buttonObj['position_x']," Y_pos = ",buttonObj['position_y'],"timing_data : ",buttonObj['timing_data']
         #print row['remoteName'],row['remoteData'],type(row['remoteData'])
-        
 
     log.startLogging(sys.stdout)
 
