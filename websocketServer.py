@@ -101,7 +101,11 @@ if __name__ == '__main__':
     """)
 
     for row in cur.fetchall():
-         print row['remoteName'],row['remoteData'],type(row['remoteData'])
+        print row['remoteName']
+        aRemoteDataObjList = ast.literal_eval(row['remoteData'])
+        for buttonObj in aRemoteDataObjList:
+            print buttonObj['button_name']
+        #print row['remoteName'],row['remoteData'],type(row['remoteData'])
 
 
     log.startLogging(sys.stdout)
