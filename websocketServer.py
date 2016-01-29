@@ -88,15 +88,20 @@ if __name__ == '__main__':
     from twisted.internet import reactor
 
     #conn = psycopg2.connect("dbname=uniart4_pr host=localhost user=user password=password")
-    conn = psycopg2.connect('dbname=infraredRF')
+    conn = psycopg2.connect("dbname=infraredRF host=odoofree.c9ds6ld0qjal.ap-southeast-1.rds.amazonaws.com user=iruser password=sunshine" )
+    #conn = psycopg2.connect('dbname=infraredRF')
     #cur = conn.cursor()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    #cur.execute("""
+    #select "remoteName", "buttonData"->'button'->>'volup' as avolup,"buttonData" from "infraredRF_data"
+    #""")
+
     cur.execute("""
-    select "remoteName", "buttonData"->'button'->>'volup' as avolup,"buttonData" from "infraredRF_data"
+    select "remoteName", "remoteData" from "infraredRF_data"
     """)
 
-    #for row in cur.fetchall():
-    #     print row['remoteName'],row['buttonData'],row['avolup']
+    for row in cur.fetchall():
+         print row['remoteName'],row['remoteData'],type(row['remoteData'])
 
 
     log.startLogging(sys.stdout)
