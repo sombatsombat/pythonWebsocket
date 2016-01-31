@@ -57,8 +57,6 @@ class MyServerProtocol(WebSocketServerProtocol):
         print("WebSocket connection closed: {0}".format(reason))
 
     def get_ir_data (self, aJsonRequest ):
-        conn = psycopg2.connect("dbname=infraredRF host=odoofree.c9ds6ld0qjal.ap-southeast-1.rds.amazonaws.com user=iruser password=sunshine" )
-        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         aSql ="""select "remoteName", "remoteData" from "infraredRF_data"
                 where "remoteName" = """
         aSql = aSql + "'" + aJsonRequest["name"] + "'"
@@ -74,13 +72,9 @@ class MyServerProtocol(WebSocketServerProtocol):
             aJsonResult = {}
             aJsonResult['status'] ='found'
             aJsonResult['remote_data'] = aRow["remoteData"]
-            cur.close()
-            conn.close()
             return aJsonResult
         else:
             #print "Not found remote"
-            cur.close()
-            conn.close()
             return json.loads('{ "status" : "Not found" } ')
 
     def processMessage (self, payload, isBinary ):
@@ -185,8 +179,7 @@ if __name__ == '__main__':
         for buttonObj in row['remoteData']:
             print "button : ",buttonObj['button_name'], " X_pos = " ,buttonObj['position_x']," Y_pos = ",buttonObj['position_y'],"timing_data : ",buttonObj['timing_data']
         #print row['remoteName'],row['remoteData'],type(row['remoteData'])
-    cur.close()
-    conn.close()
+
     log.startLogging(sys.stdout)
 
     factory = WebSocketServerFactory(u"ws://127.0.0.1:9111", debug=True)
